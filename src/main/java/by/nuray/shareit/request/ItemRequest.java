@@ -22,4 +22,5 @@ public class ItemRequest {
     private LocalDate createdDate;
 
     private boolean found;
+
 }

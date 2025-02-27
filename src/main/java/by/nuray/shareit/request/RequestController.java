@@ -24,10 +24,7 @@ public class RequestController {
 
     @GetMapping
     public List<ItemRequestDTO> getRequests() {
-        return requestService.getRequests()
-                .stream()
-                .map(request-> modelMapper.map(request, ItemRequestDTO.class))
-                .collect(Collectors.toList());
+        return requestService.getRequests().stream().map(request -> modelMapper.map(request, ItemRequestDTO.class)).collect(Collectors.toList());
     }
 
     @PostMapping
@@ -38,9 +35,8 @@ public class RequestController {
     }
 
     @PatchMapping("/{id}/response")
-    public ResponseEntity<ItemRequestDTO> updateRequest(@PathVariable int id,@RequestBody Item item,
-                                                        @RequestHeader(  "X-Sharer-User-Id") int ownerId) {
-        requestService.addItemToRequest(item, id,ownerId);
+    public ResponseEntity<ItemRequestDTO> updateRequest(@PathVariable int id, @RequestBody Item item, @RequestHeader("X-Sharer-User-Id") int ownerId) {
+        requestService.addItemToRequest(item, id, ownerId);
         ItemRequest updatedRequest = requestService.getRequestById(id);
 
         return ResponseEntity.ok(modelMapper.map(updatedRequest, ItemRequestDTO.class));

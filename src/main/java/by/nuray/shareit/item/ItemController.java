@@ -25,17 +25,15 @@ public class ItemController {
     }
 
 
-
-
     @GetMapping
     public List<ItemDto> getItemsbyOwner(
-            @RequestHeader(  "X-Sharer-User-Id") int ownerId) {
+            @RequestHeader("X-Sharer-User-Id") int ownerId) {
 
-         return itemService.getItemsByOwner(ownerId)
-                 .stream()
-                 .map(item -> modelMapper.map(item, ItemDto.class))
-                 .collect(Collectors.toList());
-        }
+        return itemService.getItemsByOwner(ownerId)
+                .stream()
+                .map(item -> modelMapper.map(item, ItemDto.class))
+                .collect(Collectors.toList());
+    }
 
 
     @GetMapping("/{id}")
@@ -44,15 +42,13 @@ public class ItemController {
     }
 
 
-
-
     @PatchMapping("/{id}")
     public ResponseEntity<Item> updateItem(@PathVariable int id,
                                            @RequestBody @Valid ItemDto itemDto,
-                                           @RequestHeader(  "X-Sharer-User-Id") int ownerId) {
+                                           @RequestHeader("X-Sharer-User-Id") int ownerId) {
 
         Item item = itemService.getById(id);
-        itemService.update(id,modelMapper.map(itemDto,Item.class),ownerId);
+        itemService.update(id, modelMapper.map(itemDto, Item.class), ownerId);
         return new ResponseEntity(item, HttpStatus.OK);
 
     }
@@ -71,12 +67,12 @@ public class ItemController {
 
     @PostMapping
     public ResponseEntity<ItemDto> createItem(@RequestBody @Valid ItemDto itemDto,
-                                              @RequestHeader(  "X-Sharer-User-Id") int ownerId) {
+                                              @RequestHeader("X-Sharer-User-Id") int ownerId) {
         Item item = new Item();
         item.setName(itemDto.getName());
         item.setDescription(itemDto.getDescription());
         item.setAvailable(itemDto.isAvailable());
-        itemService.save(item,ownerId);
+        itemService.save(item, ownerId);
         return new ResponseEntity(modelMapper.map(item, ItemDto.class), HttpStatus.CREATED);
     }
 
@@ -84,13 +80,11 @@ public class ItemController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteItem(@PathVariable int id) {
         itemService.delete(id);
-        return  ResponseEntity.ok().build();
+        return ResponseEntity.ok().build();
     }
 
 
-
-
-    }
+}
 
 
 

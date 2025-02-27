@@ -1,10 +1,11 @@
 package by.nuray.shareit.user;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-
 @Getter
 @Setter
+@AllArgsConstructor
 public class UserDTO {
     private String username;
     private String email;
@@ -12,16 +13,7 @@ public class UserDTO {
     public UserDTO() {
     }
 
-    public UserDTO(String username, String email) {
-        this.username = username;
-        this.email = email;
-    }
 
-    public String getUsername() {
-        return username;
-    }
 
-    public String getEmail() {
-        return email;
-    }
+
 }

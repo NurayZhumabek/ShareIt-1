@@ -61,14 +61,13 @@ public class BookingServiceImpl implements BookingService {
             throw new BookingException("Booking not found");
         }
 
-        if(booking.getBooker().getId() != bookerId) {
+        if (booking.getBooker().getId() != bookerId) {
             throw new BookingException("Booker id mismatch");
         }
 
         if (booking.getStatus() != Status.WAITING) {
             throw new BookingException("Booking status is not waiting");
         }
-
 
 
         booking.setStatus(Status.CANCELED);
@@ -90,7 +89,7 @@ public class BookingServiceImpl implements BookingService {
             throw new RuntimeException("Invalid request");
         }
 
-        int owner=booking.getItem().getOwner().getId();
+        int owner = booking.getItem().getOwner().getId();
         if (owner != ownerId) {
             throw new BookingException("You are not owner of this item");
         }
@@ -105,10 +104,6 @@ public class BookingServiceImpl implements BookingService {
 
         return booking;
     }
-
-
-
-
 
 
 }

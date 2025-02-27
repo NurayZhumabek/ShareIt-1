@@ -1,7 +1,9 @@
 package by.nuray.shareit.user;
 
 
-import by.nuray.shareit.util.UserValidator;
+import by.nuray.shareit.util.UserAlreadyExistsException;
+import by.nuray.shareit.util.UserNotFoundException;
+import by.nuray.shareit.util.UserValidationException;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -17,13 +19,11 @@ import java.util.stream.Collectors;
 public class UserController {
     private final UserService userService;
     private final ModelMapper modelMapper;
-    private final UserValidator userValidator;
 
 
-    public UserController(UserService userService, ModelMapper modelMapper, UserValidator userValidator) {
+    public UserController(UserService userService, ModelMapper modelMapper) {
         this.userService = userService;
         this.modelMapper = modelMapper;
-        this.userValidator = userValidator;
     }
 
     @GetMapping
@@ -41,29 +41,25 @@ public class UserController {
     }
 
 
-
     @PostMapping
-    public ResponseEntity<?> createPerson(@RequestBody @Valid UserDTO userDTO, BindingResult bindingResult) {
+    public ResponseEntity<?> createPerson(@Valid @RequestBody UserDTO userDTO, BindingResult bindingResult) {
 
-        User user=modelMapper.map(userDTO, User.class);
-
-        userValidator.validate(user, bindingResult);
+        User user = modelMapper.map(userDTO, User.class);
 
         if (bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
         }
 
         userService.save(user);
-        return new ResponseEntity(modelMapper.map(user,UserDTO.class), HttpStatus.OK);
 
-       }
+        return ResponseEntity.status(HttpStatus.CREATED).body(modelMapper.map(user, UserDTO.class));
+    }
 
 
     @PatchMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable int id,
-                                           @RequestBody @Valid UserDTO userDTO, BindingResult bindingResult) {
+                                        @RequestBody @Valid UserDTO userDTO, BindingResult bindingResult) {
         User updatedUser = modelMapper.map(userDTO, User.class);
-
 
         if (bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
@@ -78,24 +74,8 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<User> deleteUser(@PathVariable int id) {
         userService.delete(id);
-        return  ResponseEntity.ok().build();
+        return ResponseEntity.ok().build();
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 }

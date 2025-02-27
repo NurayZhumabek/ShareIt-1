@@ -3,6 +3,7 @@ package by.nuray.shareit.user;
 import by.nuray.shareit.util.ItemNotFoundException;
 import by.nuray.shareit.util.UserAlreadyExistsException;
 import by.nuray.shareit.util.UserNotFoundException;
+import by.nuray.shareit.util.UserValidationException;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -31,26 +32,39 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void save(User user) {
-        int newId = users.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
 
+
+        if (user.getUsername().isBlank() || user.getEmail() == null) {
+            throw new UserValidationException("The username cannot be empty");
+        }
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new UserValidationException("Email cannot be empty");
+        }
+
+        if (findByEmail(user.getEmail()).isPresent()) {
+            throw new UserAlreadyExistsException("User with email " + user.getEmail() + " already exists.");
+        }
+
+        int newId = users.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
         user.setId(newId);
-        users.put(newId, user);
+        users.put(user.getId(), user);
     }
 
     @Override
     public void update(int id, User updatedUser) {
-        User currentUser = users.get(id);;
+        User currentUser = users.get(id);
 
         if (currentUser == null) {
             throw new UserNotFoundException("User with id " + id + " not found");
         }
 
+        if (updatedUser.getEmail() != null && !updatedUser.getEmail().isBlank()
+                && !currentUser.getEmail().equalsIgnoreCase(updatedUser.getEmail())) {
 
-
-        if (updatedUser.getEmail() != null && !currentUser.getEmail().equalsIgnoreCase(updatedUser.getEmail())) {
             if (findByEmail(updatedUser.getEmail()).isPresent()) {
                 throw new UserAlreadyExistsException("User with email " + updatedUser.getEmail() + " already exists.");
             }
+
             currentUser.setEmail(updatedUser.getEmail());
         }
 
@@ -59,16 +73,13 @@ public class UserServiceImpl implements UserService {
         }
 
 
-
-    users.put(id, currentUser);
+        users.put(id, currentUser);
     }
-
-
 
 
     @Override
     public void delete(int id) {
-        findById(id).orElseThrow(()->new UserNotFoundException("The user with id " + id + " was not found."));
+        findById(id).orElseThrow(() -> new UserNotFoundException("The user with id " + id + " was not found."));
 
         users.remove(id);
 

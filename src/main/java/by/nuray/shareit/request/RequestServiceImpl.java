@@ -13,7 +13,7 @@ import java.util.*;
 public class RequestServiceImpl implements RequestService {
 
 
-    Map<Integer,ItemRequest> requests =new HashMap<Integer,ItemRequest>();
+    Map<Integer, ItemRequest> requests = new HashMap<Integer, ItemRequest>();
 
     private final ItemService itemService;
 
@@ -58,7 +58,7 @@ public class RequestServiceImpl implements RequestService {
         }
 
 
-        itemService.save(item,ownerId);
+        itemService.save(item, ownerId);
         itemRequest.setFound(true);
 
 
@@ -69,8 +69,6 @@ public class RequestServiceImpl implements RequestService {
     public List<ItemRequest> getRequests() {
         return new ArrayList<>(requests.values());
     }
-
-
 
 
     @Override

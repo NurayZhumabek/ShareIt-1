@@ -17,6 +17,7 @@ public class BookingDTO {
     public BookingDTO() {
     }
 
+
     public BookingDTO(int id, LocalDate start, LocalDate end, int itemId, int bookerId, Status status) {
         this.id = id;
         this.start = start;

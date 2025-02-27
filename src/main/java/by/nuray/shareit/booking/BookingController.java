@@ -1,7 +1,6 @@
 package by.nuray.shareit.booking;
 
 
-
 import by.nuray.shareit.user.User;
 import by.nuray.shareit.user.UserService;
 import by.nuray.shareit.util.BookingException;
@@ -46,15 +45,14 @@ public class BookingController {
     }
 
 
-
-
     @PatchMapping("/cancel/{id}")
     public ResponseEntity<BookingDTO> cancelBooking(@PathVariable("id") int bookingId,
-                                    @RequestHeader("bookerId") int bookerId) {
+                                                    @RequestHeader("bookerId") int bookerId) {
         Booking cancelledBooking = bookingService.cancelBooking(bookingId, bookerId);
-        return new ResponseEntity<>( modelMapper.map(cancelledBooking, BookingDTO.class), HttpStatus.OK);
+        return new ResponseEntity<>(modelMapper.map(cancelledBooking, BookingDTO.class), HttpStatus.OK);
 
     }
+
 
     @PatchMapping("/update/{id}")
     public ResponseEntity<BookingDTO> updateBooking(@PathVariable int id,
@@ -63,17 +61,6 @@ public class BookingController {
         Booking updatedBooking = bookingService.updateBookingStatus(id, updatedStatus, ownerId);
         return new ResponseEntity<>(modelMapper.map(updatedBooking, BookingDTO.class), HttpStatus.OK);
     }
-
-
-
-
-
-
-
-
-
-
-
 
 
 }

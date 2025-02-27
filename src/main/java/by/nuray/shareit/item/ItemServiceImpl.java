@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 public class ItemServiceImpl implements ItemService {
 
 
-    Map<Integer,Item> items = new HashMap<Integer,Item>();
+    Map<Integer, Item> items = new HashMap<Integer, Item>();
 
 
     private final UserService userService;
@@ -29,17 +29,16 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Item getById(int id) {
-        return findItem(id).orElseThrow(()->new ItemNotFoundException("Item not found"));
+        return findItem(id).orElseThrow(() -> new ItemNotFoundException("Item not found"));
     }
 
 
-
-@Override
-public List<Item> getItemsByOwner(int ownerId) {
-return items.values().stream()
-                    .filter(i -> i.getOwner() != null && i.getOwner().getId() == ownerId)
-                    .collect(Collectors.toList());
-        }
+    @Override
+    public List<Item> getItemsByOwner(int ownerId) {
+        return items.values().stream()
+                .filter(i -> i.getOwner() != null && i.getOwner().getId() == ownerId)
+                .collect(Collectors.toList());
+    }
 
 
     @Override
@@ -53,22 +52,32 @@ return items.values().stream()
     }
 
     @Override
-    public void update(int id, Item updatedItem,int ownerId) {
+    public void update(int id, Item updatedItem, int ownerId) {
 
-        Item item1 = items.get(id);
+        Item currentItem = items.get(id);
 
-        if (item1 != null && item1.getOwner().getId() == ownerId) {
-            updatedItem.setId(id);
-            updatedItem.setOwner(item1.getOwner());
-            items.put(id, updatedItem);
-        }
-        else {
+        if (currentItem != null && currentItem.getOwner().getId() == ownerId) {
+
+            if (updatedItem.getName() != null && !updatedItem.getName().isBlank()) {
+                currentItem.setName(updatedItem.getName());
+            }
+            if (updatedItem.getDescription() != null && !updatedItem.getDescription().isBlank()) {
+                currentItem.setDescription(updatedItem.getDescription());
+            }
+            if (currentItem.isAvailable() != updatedItem.isAvailable()) {
+                currentItem.setAvailable(updatedItem.isAvailable());
+            }
+            items.put(id, currentItem);
+
+        } else {
             throw new ItemNotFoundException("Item not found or given incorrect owner id");
         }
-
     }
 
+
+
     @Override
+
     public void delete(int id) {
         findItem(id).orElseThrow(() -> new ItemNotFoundException("Item not found with id: " + id));
         items.remove(id);
@@ -78,13 +87,17 @@ return items.values().stream()
     @Override
     public List<Item> searchItem(String itemName) {
 
-       return items.values()
+        String name= itemName.toLowerCase();
+
+        return items.values()
                 .stream()
-                .filter(i->i.getName().contains(itemName) && i.isAvailable())
+                .filter(i -> (i.getName().toLowerCase().contains(name)
+                        || i.getDescription().toLowerCase().contains(name))
+                        && i.isAvailable())
                 .collect(Collectors.toList());
 
-        }
     }
+}
 
 
 

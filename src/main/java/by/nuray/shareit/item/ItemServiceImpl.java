@@ -64,8 +64,8 @@ public class ItemServiceImpl implements ItemService {
             if (updatedItem.getDescription() != null && !updatedItem.getDescription().isBlank()) {
                 currentItem.setDescription(updatedItem.getDescription());
             }
-            if (currentItem.isAvailable() != updatedItem.isAvailable()) {
-                currentItem.setAvailable(updatedItem.isAvailable());
+            if (updatedItem.getAvailable() != null) {
+                currentItem.setAvailable(updatedItem.getAvailable());
             }
             items.put(id, currentItem);
 
@@ -93,7 +93,7 @@ public class ItemServiceImpl implements ItemService {
                 .stream()
                 .filter(i -> (i.getName().toLowerCase().contains(name)
                         || i.getDescription().toLowerCase().contains(name))
-                        && i.isAvailable())
+                        && Boolean.TRUE.equals(i.getAvailable()))
                 .collect(Collectors.toList());
 
     }

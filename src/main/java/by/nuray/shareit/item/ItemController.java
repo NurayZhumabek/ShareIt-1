@@ -71,7 +71,7 @@ public class ItemController {
         Item item = new Item();
         item.setName(itemDto.getName());
         item.setDescription(itemDto.getDescription());
-        item.setAvailable(itemDto.isAvailable());
+        item.setAvailable(itemDto.getAvailable());
         itemService.save(item, ownerId);
         return new ResponseEntity(modelMapper.map(item, ItemDto.class), HttpStatus.CREATED);
     }

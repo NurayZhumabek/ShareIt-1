@@ -20,7 +20,9 @@ public class Item {
     @Size(min = 2, max = 200)
     private String description;
 
-    private boolean available;
+    private Boolean available;
+
+
     private User owner;
 
     public int getId() {
@@ -47,14 +49,7 @@ public class Item {
         this.description = description;
     }
 
-    @NotEmpty
-    public boolean isAvailable() {
-        return available;
-    }
 
-    public void setAvailable(@NotEmpty boolean available) {
-        this.available = available;
-    }
 
     public User getOwner() {
         return owner;
@@ -62,5 +57,13 @@ public class Item {
 
     public void setOwner(User owner) {
         this.owner = owner;
+    }
+
+    public Boolean getAvailable() {
+        return available;
+    }
+
+    public void setAvailable(Boolean available) {
+        this.available = available;
     }
 }

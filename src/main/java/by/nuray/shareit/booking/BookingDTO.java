@@ -1,30 +1,33 @@
 package by.nuray.shareit.booking;
 
+import by.nuray.shareit.util.State;
 import by.nuray.shareit.util.Status;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class BookingDTO {
 
     private int id;
-    private LocalDate start;
-    private LocalDate end;
+    private LocalDateTime start;
+    private LocalDateTime end;
     private int itemId;
     private int bookerId;
     private Status status;
+    private State state;
 
 
     public BookingDTO() {
     }
 
 
-    public BookingDTO(int id, LocalDate start, LocalDate end, int itemId, int bookerId, Status status) {
+    public BookingDTO(int id, LocalDateTime start, LocalDateTime end, int itemId, int bookerId, Status status, State state) {
         this.id = id;
         this.start = start;
         this.end = end;
         this.itemId = itemId;
         this.bookerId = bookerId;
         this.status = status;
+        this.state = state;
     }
 
     public int getId() {
@@ -35,19 +38,19 @@ public class BookingDTO {
         this.id = id;
     }
 
-    public LocalDate getStart() {
+    public LocalDateTime getStart() {
         return start;
     }
 
-    public void setStart(LocalDate start) {
+    public void setStart(LocalDateTime start) {
         this.start = start;
     }
 
-    public LocalDate getEnd() {
+    public LocalDateTime getEnd() {
         return end;
     }
 
-    public void setEnd(LocalDate end) {
+    public void setEnd(LocalDateTime end) {
         this.end = end;
     }
 
@@ -73,5 +76,13 @@ public class BookingDTO {
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
     }
 }

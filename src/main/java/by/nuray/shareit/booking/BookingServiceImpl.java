@@ -1,109 +1,178 @@
 package by.nuray.shareit.booking;
 
+
 import by.nuray.shareit.item.Item;
 import by.nuray.shareit.item.ItemService;
 import by.nuray.shareit.user.User;
 import by.nuray.shareit.user.UserService;
 import by.nuray.shareit.util.BookingException;
+import by.nuray.shareit.util.BookingNotFoundException;
+import by.nuray.shareit.util.State;
 import by.nuray.shareit.util.Status;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.List;
 
-@Component
+@Service
 public class BookingServiceImpl implements BookingService {
 
-    private final ItemService itemService;
-    private final UserService userService;
 
-    public BookingServiceImpl(ItemService itemService, UserService userService) {
-        this.itemService = itemService;
+    private final BookingRepository bookingRepository;
+    private final UserService userService;
+    private final ItemService itemService;
+
+    public BookingServiceImpl(BookingRepository bookingRepository, UserService userService, ItemService itemService) {
+        this.bookingRepository = bookingRepository;
         this.userService = userService;
+        this.itemService = itemService;
     }
 
-    Map<Integer, Booking> bookings = new HashMap<>();
-
     @Override
-    public Booking createBooking(Booking booking) {
-        if (booking.getItem().getId() == 0 || booking.getStart() == null || booking.getEnd() == null) {
-            throw new BookingException("Invalid booking request.");
+    public Booking createBooking(Booking booking, int bookerId, int itemId) {
+
+        User booker = userService.getUserById(bookerId);
+        Item bookingItem = itemService.getItemById(itemId);
+
+        if (booking.getStart() == null || booking.getEnd() == null) {
+            throw new BookingException("The booking start/end time cannot be null");
+        }
+        if (booking.getStart().isBefore(LocalDateTime.now())) {
+            throw new BookingException("Booking start date cannot be in the past");
+        }
+        if (!booking.getEnd().isAfter(booking.getStart())) {
+            throw new BookingException("End time must be after start time");
         }
 
-        Item item = itemService.getById(booking.getItem().getId());
-        if (item == null) {
-            throw new BookingException("Item not found.");
+        List<Booking> overlappingBookings = bookingRepository.findByItemIdAndStartBeforeAndEndAfter(
+                itemId, booking.getEnd(), booking.getStart());
+
+        boolean hasApproved = overlappingBookings.stream()
+                .anyMatch(b -> b.getStatus() == Status.APPROVED);
+
+        boolean hasWaiting = overlappingBookings.stream()
+                .anyMatch(b -> b.getStatus() == Status.WAITING);
+
+        if (hasApproved) {
+            throw new BookingException("Booking already exists and is approved");
         }
 
-        User booker = userService.getById(booking.getBooker().getId());
-        if (booker == null) {
-            throw new BookingException("User not found.");
+        if (hasWaiting) {
+            throw new BookingException("Booking request for this time already exists");
         }
 
-        booking.setItem(item);
         booking.setBooker(booker);
+        booking.setItem(bookingItem);
         booking.setStatus(Status.WAITING);
 
-        int newId = bookings.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
-        booking.setId(newId);
-        bookings.put(newId, booking);
+        return bookingRepository.save(booking);
+    }
+
+    @Override
+    public Booking getBookingById(int bookingId, int userId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new BookingNotFoundException("Booking with id " + bookingId + " not found"));
+
+        if (booking.getBooker().getId() != userId && booking.getItem().getOwner().getId() != userId) {
+            throw new BookingException("You do not have permission to view this booking");
+        }
 
         return booking;
     }
-
 
     @Override
     public Booking cancelBooking(int bookingId, int bookerId) {
-        Booking booking = bookings.get(bookingId);
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new BookingNotFoundException("Booking with id " + bookingId + " not found"));
 
 
-        if (booking == null) {
-            throw new BookingException("Booking not found");
+        if (booking.getBooker() == null || booking.getBooker().getId() != bookerId) {
+            throw new BookingException("You are not the booker of this booking");
         }
 
-        if (booking.getBooker().getId() != bookerId) {
-            throw new BookingException("Booker id mismatch");
+        if (booking.getStatus() != Status.WAITING){
+            throw new BookingException("Booking status is not  WAITING");
         }
-
-        if (booking.getStatus() != Status.WAITING) {
-            throw new BookingException("Booking status is not waiting");
-        }
-
-
         booking.setStatus(Status.CANCELED);
-        bookings.put(bookingId, booking);
 
-        return booking;
+
+        return bookingRepository.save(booking);
+    }
+
+    @Override
+    public Booking updateBookingStatus(int bookingId, boolean approved, int ownerId) {
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new BookingNotFoundException("Booking with id " + bookingId + " not found"));
+
+        if (booking.getItem().getOwner() == null ||booking.getItem().getOwner().getId() != ownerId) {
+            throw new BookingException("You are not the owner of this booking request");
+        }
+        if (booking.getStatus() != Status.WAITING) {
+            throw new BookingException("Booking status is already changed");
+        }
+
+        Status decision = approved ? Status.APPROVED:Status.REJECTED;
+
+        booking.setStatus(decision);
+        return bookingRepository.save(booking);
+
 
     }
 
     @Override
-    public Booking updateBookingStatus(int bookingId, boolean updatedStatus, int ownerId) {
-        Booking booking = bookings.get(bookingId);
+    public List<Booking> getBookingsByBooker(int bookerId, State state) {
+        LocalDateTime now = LocalDateTime.now();
 
-        if (booking == null) {
-            throw new RuntimeException("Booking not found");
+        switch (state) {
+            case ALL:
+                return bookingRepository.findByBookerIdOrderByStartDesc(bookerId);
+            case CURRENT:
+                return bookingRepository.findByBookerIdAndStartBeforeAndEndAfterOrderByStartDesc(
+                        bookerId, now, now);
+            case PAST:
+                return bookingRepository.findByBookerIdAndEndBeforeOrderByStartDesc(
+                        bookerId, now);
+            case FUTURE:
+                return bookingRepository.findByBookerIdAndStartAfterOrderByStartDesc(
+                        bookerId, now);
+            case WAITING:
+                return bookingRepository.findByBookerIdAndStatusOrderByStartDesc(
+                        bookerId, Status.WAITING);
+            case REJECTED:
+                return bookingRepository.findByBookerIdAndStatusOrderByStartDesc(
+                        bookerId, Status.REJECTED);
+            default:
+                throw new BookingException("Invalid booking state: " + state);
         }
-
-        if (booking.getItem() == null || booking.getItem().getOwner() == null) {
-            throw new RuntimeException("Invalid request");
-        }
-
-        int owner = booking.getItem().getOwner().getId();
-        if (owner != ownerId) {
-            throw new BookingException("You are not owner of this item");
-        }
-
-        if (booking.getStatus() != Status.WAITING) {
-            throw new RuntimeException("Status is already updated");
-        }
-
-        booking.setStatus(updatedStatus ? Status.APPROVED : Status.REJECTED);
-
-        bookings.put(bookingId, booking);
-
-        return booking;
     }
 
+    @Override
+    public List<Booking> getBookingsByOwner(int ownerId, State state) {
+        LocalDateTime now = LocalDateTime.now();
+
+        switch (state) {
+            case ALL:
+                return bookingRepository.findByItemOwnerIdOrderByStartDesc(ownerId);
+            case CURRENT:
+                return bookingRepository.findByItemOwnerIdAndStartBeforeAndEndAfterOrderByStartDesc(
+                        ownerId, now, now);
+            case PAST:
+                return bookingRepository.findByItemOwnerIdAndEndBeforeOrderByStartDesc(
+                        ownerId, now);
+            case FUTURE:
+                return bookingRepository.findByItemOwnerIdAndStartAfterOrderByStartDesc(
+                        ownerId, now);
+            case WAITING:
+                return bookingRepository.findByItemOwnerIdAndStatusOrderByStartDesc(
+                        ownerId, Status.WAITING);
+            case REJECTED:
+                return bookingRepository.findByItemOwnerIdAndStatusOrderByStartDesc(
+                        ownerId, Status.REJECTED);
+            default:
+                throw new BookingException("Invalid booking state: " + state);
+        }
+    }
 
 }

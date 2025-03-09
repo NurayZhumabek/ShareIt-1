@@ -1,78 +1,62 @@
 package by.nuray.shareit.request;
 
 import by.nuray.shareit.item.Item;
-import by.nuray.shareit.item.ItemService;
+import by.nuray.shareit.user.User;
+import by.nuray.shareit.user.UserService;
 import by.nuray.shareit.util.RequestException;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 
-@Component
+@Service
 public class RequestServiceImpl implements RequestService {
 
+    private final ItemRequestRepository itemRequestRepository;
+    private final UserService userService;
 
-    Map<Integer, ItemRequest> requests = new HashMap<Integer, ItemRequest>();
-
-    private final ItemService itemService;
-
-    public RequestServiceImpl(ItemService itemService) {
-        this.itemService = itemService;
+    public RequestServiceImpl(ItemRequestRepository itemRequestRepository, UserService userService) {
+        this.itemRequestRepository = itemRequestRepository;
+        this.userService = userService;
     }
 
     @Override
-    public ItemRequest createRequest(ItemRequest itemRequest) {
+    public ItemRequest createRequest(ItemRequest itemRequest,int requestorId) {
 
-
-        if (itemRequest == null || itemRequest.getName() == null || itemRequest.getName().isBlank()) {
-            throw new RequestException("Item request cannot be null");
-        }
-        String searchedItem = itemRequest.getName();
-
-        if (!itemService.searchItem(searchedItem).isEmpty()) {
-            throw new RequestException(searchedItem + " already exists");
-        }
-        int newId = requests.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
-
-        itemRequest.setId(newId);
-        itemRequest.setCreatedDate(LocalDate.now());
-        itemRequest.setFound(false);
-        requests.put(itemRequest.getId(), itemRequest);
-        return itemRequest;
-
-
-    }
-
-    @Override
-    public void addItemToRequest(Item item, int itemRequestId, int ownerId) {
-
-        ItemRequest itemRequest = requests.get(itemRequestId);
+        User requestor = userService.getUserById(requestorId);
 
         if (itemRequest == null) {
-            throw new RequestException("Request not found");
+            throw new RequestException("ItemRequest cannot be null");
+        }
+        if (itemRequest.getDescription() == null || itemRequest.getDescription().isBlank()) {
+            throw new RequestException("Description cannot be null or empty");
         }
 
-        if (!item.getName().equalsIgnoreCase(itemRequest.getName())) {
-            throw new RequestException("Item does not meet the request criteria");
-        }
+        itemRequest.setRequester(requestor);
+        itemRequestRepository.save(itemRequest);
 
 
-        itemService.save(item, ownerId);
-        itemRequest.setFound(true);
-
-
+        return itemRequestRepository.save(itemRequest);
     }
+
 
 
     @Override
-    public List<ItemRequest> getRequests() {
-        return new ArrayList<>(requests.values());
+    public List<ItemRequest> getAllRequests() {
+        return itemRequestRepository.findAll();
     }
-
 
     @Override
     public ItemRequest getRequestById(int id) {
-        return requests.get(id);
+        return itemRequestRepository.findById(id).orElseThrow(()-> new RequestException("Request not found"));
+    }
+
+    @Override
+    public void deleteRequest(int requestId) {
+        if (!itemRequestRepository.existsById(requestId)) {
+            throw new RequestException("Request not found");
+        }
+        itemRequestRepository.deleteById(requestId);
     }
 }

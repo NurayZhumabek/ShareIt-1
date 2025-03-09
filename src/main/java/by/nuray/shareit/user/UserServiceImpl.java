@@ -1,95 +1,84 @@
 package by.nuray.shareit.user;
 
-import by.nuray.shareit.util.ItemNotFoundException;
 import by.nuray.shareit.util.UserAlreadyExistsException;
 import by.nuray.shareit.util.UserNotFoundException;
 import by.nuray.shareit.util.UserValidationException;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 
-@Component
+@Service
 public class UserServiceImpl implements UserService {
 
-    Map<Integer, User> users = new HashMap<>();
+
+    private final UserRepository userRepository;
+
+    public UserServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
 
     @Override
-    public Optional<User> findById(int id) {
-        return Optional.ofNullable(users.get(id));
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
     @Override
-    public User getById(int id) {
-        return findById(id).orElseThrow(() -> new UserNotFoundException("The user with id " + id + " was not found."));
+    public User createUser(User user) {
 
-    }
-
-    @Override
-    public List<User> getAll() {
-        return new ArrayList<>(users.values());
-    }
-
-    @Override
-    public void save(User user) {
-
-
-        if (user.getUsername().isBlank() || user.getEmail() == null) {
-            throw new UserValidationException("The username cannot be empty");
+        if (user == null) {
+            throw new UserValidationException("User cannot be null");
+        }
+        if (user.getUsername() == null || user.getUsername().isBlank()) {
+            throw new UserValidationException("Username is required");
         }
         if (user.getEmail() == null || user.getEmail().isBlank()) {
-            throw new UserValidationException("Email cannot be empty");
+            throw new UserValidationException("Email is required");
         }
-
         if (findByEmail(user.getEmail()).isPresent()) {
-            throw new UserAlreadyExistsException("User with email " + user.getEmail() + " already exists.");
+            throw new UserAlreadyExistsException("User with " + user.getEmail() + " already exists");
         }
+        return userRepository.save(user);
 
-        int newId = users.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
-        user.setId(newId);
-        users.put(user.getId(), user);
     }
 
     @Override
-    public void update(int id, User updatedUser) {
-        User currentUser = users.get(id);
+    public User updateUser(int id, User user) {
 
-        if (currentUser == null) {
-            throw new UserNotFoundException("User with id " + id + " not found");
+        User currentUser = getUserById(id);
+
+        if (user.getUsername() != null && !user.getUsername().isBlank()) {
+            currentUser.setUsername(user.getUsername());
         }
 
-        if (updatedUser.getEmail() != null && !updatedUser.getEmail().isBlank()
-                && !currentUser.getEmail().equalsIgnoreCase(updatedUser.getEmail())) {
+        if (user.getEmail() != null && !user.getEmail().isBlank()
+                && !user.getEmail().equals(currentUser.getEmail())) {
 
-            if (findByEmail(updatedUser.getEmail()).isPresent()) {
-                throw new UserAlreadyExistsException("User with email " + updatedUser.getEmail() + " already exists.");
+            if (findByEmail(user.getEmail()).isPresent()) {
+                throw new UserAlreadyExistsException("This email already exists");
             }
-
-            currentUser.setEmail(updatedUser.getEmail());
+            currentUser.setEmail(user.getEmail());
         }
-
-        if (updatedUser.getUsername() != null && !updatedUser.getUsername().isBlank()) {
-            currentUser.setUsername(updatedUser.getUsername());
-        }
-
-
-        users.put(id, currentUser);
+        return userRepository.save(currentUser);
     }
 
-
     @Override
-    public void delete(int id) {
-        findById(id).orElseThrow(() -> new UserNotFoundException("The user with id " + id + " was not found."));
-
-        users.remove(id);
+    public void deleteUser(int id) {
+        if (!userRepository.existsById(id)) {
+            throw new UserNotFoundException("User not found");
+        }
+        userRepository.deleteById(id);
 
     }
 
     @Override
     public Optional<User> findByEmail(String email) {
-        return users.values()
-                .stream()
-                .filter(user -> user.getEmail().equals(email))
-                .findFirst();
+        return userRepository.findByEmail(email);
+    }
+
+    @Override
+    public User getUserById(int id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User with id " + id + " not found"));
     }
 }

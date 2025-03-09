@@ -13,10 +13,7 @@ import java.time.LocalDate;
 public class ItemRequestDTO {
 
     private int id;
-    private String name;
     private String description;
-    private LocalDate createdDate;
-    private boolean found;
 
     public ItemRequestDTO() {
     }

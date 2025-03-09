@@ -1,66 +1,101 @@
 package by.nuray.shareit.booking;
 
 
-import by.nuray.shareit.user.User;
-import by.nuray.shareit.user.UserService;
-import by.nuray.shareit.util.BookingException;
+import by.nuray.shareit.util.State;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 @RestController
-@RequestMapping("/booking")
+@RequestMapping("/bookings")
 public class BookingController {
-
 
     private final BookingService bookingService;
     private final ModelMapper modelMapper;
-    private final UserService userService;
 
-    public BookingController(BookingService bookingService, ModelMapper modelMapper, UserService userService) {
+    public BookingController(BookingService bookingService, ModelMapper modelMapper) {
         this.bookingService = bookingService;
         this.modelMapper = modelMapper;
-        this.userService = userService;
     }
 
     @PostMapping
-    public ResponseEntity<BookingDTO> createBooking(
+    public ResponseEntity<?> createBooking(
             @RequestBody @Valid BookingDTO bookingDTO,
-            @RequestHeader("bookerId") int bookerId) {
+            BindingResult bindingResult,
+            @RequestHeader("X-Sharer-User-Id") int bookerId) {
+
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest()
+                    .body(bindingResult.getAllErrors().stream()
+                            .map(ObjectError::getDefaultMessage)
+                            .collect(Collectors.toList()));
+        }
 
         Booking booking = modelMapper.map(bookingDTO, Booking.class);
+        bookingService.createBooking(booking, bookerId, bookingDTO.getItemId());
 
-        User booker = userService.getById(bookerId);
-        if (booker == null) {
-            throw new BookingException("User not found.");
-        }
-        booking.setBooker(booker);
-
-        Booking createdBooking = bookingService.createBooking(booking);
-
-        return new ResponseEntity<>(modelMapper.map(createdBooking, BookingDTO.class), HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).body(modelMapper.map(booking, BookingDTO.class));
     }
-
 
     @PatchMapping("/cancel/{id}")
-    public ResponseEntity<BookingDTO> cancelBooking(@PathVariable("id") int bookingId,
-                                                    @RequestHeader("bookerId") int bookerId) {
+    public ResponseEntity<BookingDTO> cancelBooking(
+            @PathVariable("id") int bookingId,
+            @RequestHeader("X-Sharer-User-Id") int bookerId) {
+
         Booking cancelledBooking = bookingService.cancelBooking(bookingId, bookerId);
-        return new ResponseEntity<>(modelMapper.map(cancelledBooking, BookingDTO.class), HttpStatus.OK);
-
+        return ResponseEntity.ok(modelMapper.map(cancelledBooking, BookingDTO.class));
     }
-
 
     @PatchMapping("/update/{id}")
-    public ResponseEntity<BookingDTO> updateBooking(@PathVariable int id,
-                                                    @RequestHeader("X-Sharer-User-Id") int ownerId,
-                                                    @RequestParam boolean updatedStatus) {
+    public ResponseEntity<BookingDTO> updateBooking(
+            @PathVariable int id,
+            @RequestHeader("X-Sharer-User-Id") int ownerId,
+            @RequestParam boolean updatedStatus) {
+
         Booking updatedBooking = bookingService.updateBookingStatus(id, updatedStatus, ownerId);
-        return new ResponseEntity<>(modelMapper.map(updatedBooking, BookingDTO.class), HttpStatus.OK);
+        return ResponseEntity.ok(modelMapper.map(updatedBooking, BookingDTO.class));
+    }
+
+    @GetMapping("/owner")
+    public List<BookingDTO> getBookingByOwner(
+            @RequestHeader("X-Sharer-User-Id") int ownerId,
+            @RequestParam(value = "state", defaultValue = "ALL") State state) {
+
+        return bookingService.getBookingsByOwner(ownerId, state)
+                .stream()
+                .map(b -> modelMapper.map(b, BookingDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/booker")
+    public List<BookingDTO> getBookingByBooker(
+            @RequestHeader("X-Sharer-User-Id") int bookerId,
+            @RequestParam(value = "state", defaultValue = "ALL") State state) {
+
+        return bookingService.getBookingsByBooker(bookerId, state)
+                .stream()
+                .map(b -> modelMapper.map(b, BookingDTO.class))
+                .collect(Collectors.toList());
     }
 
 
+    @GetMapping("/{id}")
+    public ResponseEntity<BookingDTO> getBookingById(
+            @PathVariable("id") int bookingId,
+            @RequestHeader("X-Sharer-User-Id") int userId) {  // Добавлен userId
+
+        Booking booking = bookingService.getBookingById(bookingId, userId);
+        return ResponseEntity.ok(modelMapper.map(booking, BookingDTO.class));
+    }
 }
+
+
+

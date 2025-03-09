@@ -3,15 +3,16 @@ package by.nuray.shareit.request;
 import by.nuray.shareit.item.Item;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface RequestService {
-    ItemRequest createRequest(ItemRequest itemRequest);
+    ItemRequest createRequest(ItemRequest itemRequest,int requestorId);
 
 
-    void addItemToRequest(Item item, int itemRequestId, int ownerId);
 
-    List<ItemRequest> getRequests();
+    List<ItemRequest> getAllRequests();
 
     ItemRequest getRequestById(int id);
+
+    void deleteRequest(int requestId);
+
 }

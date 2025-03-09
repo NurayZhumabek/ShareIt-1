@@ -1,100 +1,118 @@
 package by.nuray.shareit.item;
 
+import by.nuray.shareit.request.ItemRequest;
+import by.nuray.shareit.request.RequestService;
 import by.nuray.shareit.user.User;
 import by.nuray.shareit.user.UserService;
 import by.nuray.shareit.util.ItemNotFoundException;
-import org.springframework.stereotype.Component;
+import by.nuray.shareit.util.ItemValidationException;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 
-@Component
-public class ItemServiceImpl implements ItemService {
+@Service
+public  class ItemServiceImpl implements ItemService {
 
 
-    Map<Integer, Item> items = new HashMap<Integer, Item>();
-
-
+    private final ItemRepository itemRepository;
     private final UserService userService;
+    private final RequestService requestService;
 
-    public ItemServiceImpl(UserService userService) {
+    public ItemServiceImpl(ItemRepository itemRepository, UserService userService, RequestService requestService) {
+        this.itemRepository = itemRepository;
         this.userService = userService;
+        this.requestService = requestService;
     }
 
     @Override
-    public Optional<Item> findItem(int id) {
-        return Optional.ofNullable(items.get(id));
-    }
+    public Item createItem(Item item, int ownerId) {
 
-    @Override
-    public Item getById(int id) {
-        return findItem(id).orElseThrow(() -> new ItemNotFoundException("Item not found"));
-    }
+        User user = userService.getUserById(ownerId);
 
-
-    @Override
-    public List<Item> getItemsByOwner(int ownerId) {
-        return items.values().stream()
-                .filter(i -> i.getOwner() != null && i.getOwner().getId() == ownerId)
-                .collect(Collectors.toList());
-    }
-
-
-    @Override
-    public void save(Item item, int ownerId) {
-        int newId = items.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
-        item.setId(newId);
-        User owner = userService.getById(ownerId);
-        item.setOwner(owner);
-
-        items.put(item.getId(), item);
-    }
-
-    @Override
-    public void update(int id, Item updatedItem, int ownerId) {
-
-        Item currentItem = items.get(id);
-
-        if (currentItem != null && currentItem.getOwner().getId() == ownerId) {
-
-            if (updatedItem.getName() != null && !updatedItem.getName().isBlank()) {
-                currentItem.setName(updatedItem.getName());
-            }
-            if (updatedItem.getDescription() != null && !updatedItem.getDescription().isBlank()) {
-                currentItem.setDescription(updatedItem.getDescription());
-            }
-            if (updatedItem.getAvailable() != null) {
-                currentItem.setAvailable(updatedItem.getAvailable());
-            }
-            items.put(id, currentItem);
-
-        } else {
-            throw new ItemNotFoundException("Item not found or given incorrect owner id");
+        if (item == null) {
+            throw new ItemValidationException("item cannot be null");
         }
+        if (item.getName() == null || item.getName().isBlank()) {
+            throw new ItemValidationException("item name is required");
+        }
+        if (item.getDescription() == null || item.getDescription().isBlank()) {
+            throw new ItemValidationException("item description is required");
+        }
+        item.setAvailable(true);
+        item.setOwner(user);
+
+        return itemRepository.save(item);
     }
 
-
-
     @Override
+    public void updateItem(int id, Item item, int ownerId) {
 
-    public void delete(int id) {
-        findItem(id).orElseThrow(() -> new ItemNotFoundException("Item not found with id: " + id));
-        items.remove(id);
+        Item currentItem = getItemById(id);
+        if (currentItem.getOwner().getId() != ownerId) {
+            throw new ItemValidationException("You are not allowed to update this item");
+        }
+        if (item.getName() != null && !item.getName().isBlank()) {
+            currentItem.setName(item.getName());
+        }
+        if (item.getDescription() != null && !item.getDescription().isBlank()) {
+            currentItem.setDescription(item.getDescription());
+        }
+        if (item.getAvailable() != null) {
+            currentItem.setAvailable(item.getAvailable());
+        }
+
+        itemRepository.save(currentItem);
+
+
     }
 
+    @Override
+    public void deleteItem(int id) {
+        if (!itemRepository.existsById(id)) {
+            throw new ItemNotFoundException("Item not found");
+        }
+        itemRepository.deleteById(id);
+
+    }
 
     @Override
-    public List<Item> searchItem(String itemName) {
+    public Item getItemById(int id) {
+        return itemRepository.findById(id)
+                .orElseThrow(()->new ItemNotFoundException("Item with id " + id + " not found"));
+    }
 
-        String name= itemName.toLowerCase();
+    @Override
+    public List<Item> getAllItems() {
+        return itemRepository.findAll();
+    }
 
-        return items.values()
+    @Override
+    public List<Item> getAllItemsByOwner(int ownerId) {
+        return itemRepository.findByOwnerId(ownerId);
+    }
+
+    @Override
+    public List<Item> searchItems(String itemName) {
+        return itemRepository.findAll()
                 .stream()
-                .filter(i -> (i.getName().toLowerCase().contains(name)
-                        || i.getDescription().toLowerCase().contains(name))
-                        && Boolean.TRUE.equals(i.getAvailable()))
+                .filter(item -> (item.getName().toLowerCase().contains(itemName.toLowerCase())
+                || item.getDescription().toLowerCase().contains(itemName.toLowerCase()))
+                        && item.getAvailable())
                 .collect(Collectors.toList());
+
+    }
+
+    @Override
+    public Item createItemFromRequest(Item item, int ownerId, int requestId) {
+
+        ItemRequest request = requestService.getRequestById(requestId);
+        Item newItem = createItem(item, ownerId);
+        newItem.setRequest(request);
+
+        return itemRepository.save(newItem);
+
 
     }
 }

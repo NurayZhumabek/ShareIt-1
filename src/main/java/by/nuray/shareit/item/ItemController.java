@@ -5,6 +5,8 @@ import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,10 +28,10 @@ public class ItemController {
 
 
     @GetMapping
-    public List<ItemDto> getItemsbyOwner(
+    public List<ItemDto> getItemsByOwner(
             @RequestHeader("X-Sharer-User-Id") int ownerId) {
 
-        return itemService.getItemsByOwner(ownerId)
+        return itemService.getAllItemsByOwner(ownerId)
                 .stream()
                 .map(item -> modelMapper.map(item, ItemDto.class))
                 .collect(Collectors.toList());
@@ -38,25 +40,35 @@ public class ItemController {
 
     @GetMapping("/{id}")
     public ItemDto getItemById(@PathVariable("id") int id) {
-        return modelMapper.map(itemService.getById(id), ItemDto.class);
+        return modelMapper.map(itemService.getItemById(id), ItemDto.class);
     }
 
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Item> updateItem(@PathVariable int id,
+    public ResponseEntity<?> updateItem(@PathVariable int id,
                                            @RequestBody @Valid ItemDto itemDto,
+                                           BindingResult bindingResult,
                                            @RequestHeader("X-Sharer-User-Id") int ownerId) {
 
-        Item item = itemService.getById(id);
-        itemService.update(id, modelMapper.map(itemDto, Item.class), ownerId);
-        return new ResponseEntity(item, HttpStatus.OK);
+        Item updated = modelMapper.map(itemDto, Item.class);
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest()
+                    .body(bindingResult.getAllErrors().stream()
+                            .map(ObjectError::getDefaultMessage)
+                            .collect(Collectors.toList()));
+        }
+
+        itemService.updateItem(id,updated, ownerId);
+
+        return ResponseEntity.ok(modelMapper.map(updated, ItemDto.class));
+
 
     }
 
 
     @GetMapping("/search")
     public List<ItemDto> searchItem(@RequestParam String text) {
-        List<Item> foundItems = itemService.searchItem(text);
+        List<Item> foundItems = itemService.searchItems(text);
 
         return foundItems
                 .stream()
@@ -66,22 +78,50 @@ public class ItemController {
 
 
     @PostMapping
-    public ResponseEntity<ItemDto> createItem(@RequestBody @Valid ItemDto itemDto,
+    public ResponseEntity<?> createItem(@RequestBody @Valid ItemDto itemDto,
+                                              BindingResult bindingResult,
                                               @RequestHeader("X-Sharer-User-Id") int ownerId) {
-        Item item = new Item();
-        item.setName(itemDto.getName());
-        item.setDescription(itemDto.getDescription());
-        item.setAvailable(itemDto.getAvailable());
-        itemService.save(item, ownerId);
-        return new ResponseEntity(modelMapper.map(item, ItemDto.class), HttpStatus.CREATED);
+
+        Item item = modelMapper.map(itemDto, Item.class);
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest()
+                    .body(bindingResult.getAllErrors().stream()
+                            .map(ObjectError::getDefaultMessage)
+                            .collect(Collectors.toList()));
+        }
+
+        itemService.createItem(item, ownerId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(modelMapper.map(item, ItemDto.class));
+
     }
 
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteItem(@PathVariable int id) {
-        itemService.delete(id);
-        return ResponseEntity.ok().build();
+        itemService.deleteItem(id);
+        return ResponseEntity.noContent().build();
     }
+
+
+    @PostMapping("/{requestId}")
+    public ResponseEntity<?> createItemFromRequest(@PathVariable int requestId,
+                                                   @RequestBody @Valid ItemDto itemDto,
+                                                   BindingResult bindingResult,
+                                                   @RequestHeader("X-Sharer-User-Id") int ownerId) {
+
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest()
+                    .body(bindingResult.getAllErrors().stream()
+                            .map(ObjectError::getDefaultMessage)
+                            .collect(Collectors.toList()));
+        }
+
+        Item item = modelMapper.map(itemDto, Item.class);
+        Item createdItem = itemService.createItemFromRequest(item, ownerId, requestId);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(modelMapper.map(createdItem, ItemDto.class));
+    }
+
 
 
 }

@@ -5,19 +5,20 @@ import java.util.Optional;
 
 public interface ItemService {
 
-    public Optional<Item> findItem(int id);
 
-    public Item getById(int id);
+    public Item  createItem(Item item, int ownerId);
 
-    void save(Item item, int ownerId);
+    public void updateItem(int id, Item item, int ownerId);
 
-    public void update(int id, Item item, int ownerId);
-
-    public void delete(int id);
-
-    public List<Item> searchItem(String itemName);
-
-    public List<Item> getItemsByOwner(int ownerId);
+    public void deleteItem(int id);
+    public Item getItemById(int id);
+    public List<Item> getAllItems();
+    public List<Item> getAllItemsByOwner(int ownerId);
+    public List<Item> searchItems(String itemName);
+    public Item   createItemFromRequest(Item item, int ownerId, int requestId);
 
 
-}
+
+
+
+    }

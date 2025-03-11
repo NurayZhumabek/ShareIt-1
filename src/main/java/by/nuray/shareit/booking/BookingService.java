@@ -1,8 +1,6 @@
 package by.nuray.shareit.booking;
 
 
-import by.nuray.shareit.util.State;
-
 import java.util.List;
 
 public interface BookingService {

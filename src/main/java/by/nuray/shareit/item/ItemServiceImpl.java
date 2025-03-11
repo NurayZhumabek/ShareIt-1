@@ -95,12 +95,7 @@ public  class ItemServiceImpl implements ItemService {
 
     @Override
     public List<Item> searchItems(String itemName) {
-        return itemRepository.findAll()
-                .stream()
-                .filter(item -> (item.getName().toLowerCase().contains(itemName.toLowerCase())
-                || item.getDescription().toLowerCase().contains(itemName.toLowerCase()))
-                        && item.getAvailable())
-                .collect(Collectors.toList());
+        return itemRepository.searchAvailableItems(itemName);
 
     }
 

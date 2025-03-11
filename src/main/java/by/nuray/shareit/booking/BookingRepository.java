@@ -1,8 +1,5 @@
 package by.nuray.shareit.booking;
 
-import by.nuray.shareit.item.Item;
-import by.nuray.shareit.util.State;
-import by.nuray.shareit.util.Status;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;

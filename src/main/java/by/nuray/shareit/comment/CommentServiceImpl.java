@@ -1,14 +1,12 @@
 package by.nuray.shareit.comment;
 
-import by.nuray.shareit.booking.Booking;
 import by.nuray.shareit.booking.BookingService;
 import by.nuray.shareit.item.Item;
 import by.nuray.shareit.item.ItemService;
 import by.nuray.shareit.user.User;
 import by.nuray.shareit.user.UserService;
 import by.nuray.shareit.util.CommentException;
-import by.nuray.shareit.util.State;
-import by.nuray.shareit.util.Status;
+import by.nuray.shareit.booking.State;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

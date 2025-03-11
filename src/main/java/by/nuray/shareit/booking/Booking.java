@@ -2,16 +2,16 @@ package by.nuray.shareit.booking;
 
 import by.nuray.shareit.item.Item;
 import by.nuray.shareit.user.User;
-import by.nuray.shareit.util.Status;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "bookings")
-@Data
+@Getter
+@Setter
 public class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

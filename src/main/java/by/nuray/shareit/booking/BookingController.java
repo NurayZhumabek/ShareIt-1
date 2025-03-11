@@ -1,7 +1,6 @@
 package by.nuray.shareit.booking;
 
 
-import by.nuray.shareit.util.State;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -54,7 +53,7 @@ public class BookingController {
         return ResponseEntity.ok(modelMapper.map(cancelledBooking, BookingDTO.class));
     }
 
-    @PatchMapping("/update/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<BookingDTO> updateBooking(
             @PathVariable int id,
             @RequestHeader("X-Sharer-User-Id") int ownerId,

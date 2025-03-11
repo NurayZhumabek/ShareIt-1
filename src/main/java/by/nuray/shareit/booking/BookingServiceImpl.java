@@ -7,8 +7,6 @@ import by.nuray.shareit.user.User;
 import by.nuray.shareit.user.UserService;
 import by.nuray.shareit.util.BookingException;
 import by.nuray.shareit.util.BookingNotFoundException;
-import by.nuray.shareit.util.State;
-import by.nuray.shareit.util.Status;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

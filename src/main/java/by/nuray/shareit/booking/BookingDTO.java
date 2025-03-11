@@ -1,8 +1,5 @@
 package by.nuray.shareit.booking;
 
-import by.nuray.shareit.util.State;
-import by.nuray.shareit.util.Status;
-
 import java.time.LocalDateTime;
 
 public class BookingDTO {

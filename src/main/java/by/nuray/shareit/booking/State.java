@@ -1,4 +1,4 @@
-package by.nuray.shareit.util;
+package by.nuray.shareit.booking;
 
 public enum State {
 

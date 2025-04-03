@@ -31,6 +31,11 @@ public class BookingServiceImpl implements BookingService {
 
         User booker = userService.getUserById(bookerId);
         Item bookingItem = itemService.getItemById(itemId);
+        boolean isAvailable = bookingItem.getAvailable();
+
+        if (!isAvailable) {
+            throw new BookingException("Item is not available");
+        }
 
         if (booking.getStart() == null || booking.getEnd() == null) {
             throw new BookingException("The booking start/end time cannot be null");
@@ -41,6 +46,7 @@ public class BookingServiceImpl implements BookingService {
         if (!booking.getEnd().isAfter(booking.getStart())) {
             throw new BookingException("End time must be after start time");
         }
+
 
         List<Booking> overlappingBookings = bookingRepository.findByItemIdAndStartBeforeAndEndAfter(
                 itemId, booking.getEnd(), booking.getStart());
@@ -81,15 +87,15 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public Booking cancelBooking(int bookingId, int bookerId) {
 
+        User booker = userService.getUserById(bookerId);
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException("Booking with id " + bookingId + " not found"));
 
-
-        if (booking.getBooker() == null || booking.getBooker().getId() != bookerId) {
+        if (booking.getBooker().getId() != bookerId) {
             throw new BookingException("You are not the booker of this booking");
         }
 
-        if (booking.getStatus() != Status.WAITING){
+        if (booking.getStatus() != Status.WAITING) {
             throw new BookingException("Booking status is not  WAITING");
         }
         booking.setStatus(Status.CANCELED);
@@ -101,17 +107,18 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public Booking updateBookingStatus(int bookingId, boolean approved, int ownerId) {
 
+        User owner = userService.getUserById(ownerId);
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException("Booking with id " + bookingId + " not found"));
 
-        if (booking.getItem().getOwner() == null ||booking.getItem().getOwner().getId() != ownerId) {
+        if (booking.getItem().getOwner().getId() != ownerId) {
             throw new BookingException("You are not the owner of this booking request");
         }
         if (booking.getStatus() != Status.WAITING) {
             throw new BookingException("Booking status is already changed");
         }
 
-        Status decision = approved ? Status.APPROVED:Status.REJECTED;
+        Status decision = approved ? Status.APPROVED : Status.REJECTED;
 
         booking.setStatus(decision);
         return bookingRepository.save(booking);
@@ -120,57 +127,55 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<Booking> getBookingsByBooker(int bookerId, State state) {
-        LocalDateTime now = LocalDateTime.now();
+    public List<Booking> getBookingsByBooker(int bookerId, State state, int from, int size) {
+        userService.getUserById(bookerId);
 
         switch (state) {
             case ALL:
-                return bookingRepository.findByBookerIdOrderByStartDesc(bookerId);
+                return bookingRepository.findAllBookingsForBooker(bookerId, from, size);
             case CURRENT:
-                return bookingRepository.findByBookerIdAndStartBeforeAndEndAfterOrderByStartDesc(
-                        bookerId, now, now);
+                return bookingRepository.findCurrentBookingsForBooker(bookerId, from, size);
             case PAST:
-                return bookingRepository.findByBookerIdAndEndBeforeOrderByStartDesc(
-                        bookerId, now);
+                return bookingRepository.findPastBookingsForBooker(bookerId, from, size);
             case FUTURE:
-                return bookingRepository.findByBookerIdAndStartAfterOrderByStartDesc(
-                        bookerId, now);
+                return bookingRepository.findFutureBookingsForBooker(bookerId, from, size);
             case WAITING:
-                return bookingRepository.findByBookerIdAndStatusOrderByStartDesc(
-                        bookerId, Status.WAITING);
+                return bookingRepository.findWaitingBookingsForBooker(bookerId, from, size);
             case REJECTED:
-                return bookingRepository.findByBookerIdAndStatusOrderByStartDesc(
-                        bookerId, Status.REJECTED);
+                return bookingRepository.findRejectedBookingsForBooker(bookerId, from, size);
             default:
-                throw new BookingException("Invalid booking state: " + state);
+                throw new BookingException("Unknown state!");
+        }
+    }
+
+
+    @Override
+    public List<Booking> getBookingsByOwner(int ownerId, State state, int from, int size) {
+        userService.getUserById(ownerId);
+
+        switch (state) {
+            case ALL:
+                return bookingRepository.findAllBookingsForOwner(ownerId, from, size);
+            case CURRENT:
+                return bookingRepository.findCurrentBookingsForOwner(ownerId, from, size);
+            case PAST:
+                return bookingRepository.findPastBookingsForOwner(ownerId, from, size);
+            case FUTURE:
+                return bookingRepository.findFutureBookingsForOwner(ownerId, from, size);
+            case WAITING:
+                return bookingRepository.findWaitingBookingsForOwner(ownerId, from, size);
+            case REJECTED:
+                return bookingRepository.findRejectedBookingsForOwner(ownerId, from, size);
+            default:
+                throw new BookingException("Unknown state!");
         }
     }
 
     @Override
-    public List<Booking> getBookingsByOwner(int ownerId, State state) {
-        LocalDateTime now = LocalDateTime.now();
+    public List<Booking> getPastBookingsByBookerForItem(int bookerId, int itemId) {
+        userService.getUserById(bookerId);
+        itemService.getItemById(itemId);
 
-        switch (state) {
-            case ALL:
-                return bookingRepository.findByItemOwnerIdOrderByStartDesc(ownerId);
-            case CURRENT:
-                return bookingRepository.findByItemOwnerIdAndStartBeforeAndEndAfterOrderByStartDesc(
-                        ownerId, now, now);
-            case PAST:
-                return bookingRepository.findByItemOwnerIdAndEndBeforeOrderByStartDesc(
-                        ownerId, now);
-            case FUTURE:
-                return bookingRepository.findByItemOwnerIdAndStartAfterOrderByStartDesc(
-                        ownerId, now);
-            case WAITING:
-                return bookingRepository.findByItemOwnerIdAndStatusOrderByStartDesc(
-                        ownerId, Status.WAITING);
-            case REJECTED:
-                return bookingRepository.findByItemOwnerIdAndStatusOrderByStartDesc(
-                        ownerId, Status.REJECTED);
-            default:
-                throw new BookingException("Invalid booking state: " + state);
-        }
+        return bookingRepository.findAllPastBookingsForBooker(bookerId, itemId);
     }
-
 }

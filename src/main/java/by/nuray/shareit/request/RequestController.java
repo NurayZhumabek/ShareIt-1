@@ -26,18 +26,21 @@ public class RequestController {
 
 
     @GetMapping
-    public List<ItemRequestDTO> getRequests() {
-        return requestService.getAllRequests()
-                .stream()
+    public List<ItemRequestDTO> getRequests(@RequestHeader("X-Sharer-User-Id") int userId) {
+
+        return requestService.getAllRequests(userId).
+                stream()
                 .map(request -> modelMapper.map(request, ItemRequestDTO.class))
                 .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ItemRequestDTO> getRequestById(@PathVariable("id") int id) {
-        ItemRequest request = requestService.getRequestById(id);
+    public ResponseEntity<ItemRequestDTO> getRequestById(@RequestHeader("X-Sharer-User-Id") int userId,
+                                                         @PathVariable("id") int id) {
+        ItemRequest request = requestService.getRequestById(id, userId);
         return ResponseEntity.ok(modelMapper.map(request, ItemRequestDTO.class));
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRequest(@PathVariable("id") int requestId) {
@@ -47,33 +50,29 @@ public class RequestController {
 
     @PostMapping
     public ResponseEntity<?> createRequest(@RequestBody @Valid ItemRequestDTO itemRequestDTO,
-                                                        BindingResult bindingResult,
-                                                        @RequestHeader("X-Sharer-User-Id") int requestorId) {
+                                           BindingResult bindingResult,
+                                           @RequestHeader("X-Sharer-User-Id") int requestorId) {
 
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(bindingResult.getAllErrors()
+                    .stream().map(ObjectError::getDefaultMessage)
+                    .collect(Collectors.toList()));
+        }
 
         ItemRequest itemRequest = modelMapper.map(itemRequestDTO, ItemRequest.class);
 
-        if (bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest()
-                    .body(bindingResult.getAllErrors().stream()
-                            .map(ObjectError::getDefaultMessage)
-                            .collect(Collectors.toList()));
-        }
-
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(modelMapper
-                .map(requestService.createRequest(itemRequest, requestorId), ItemRequestDTO.class));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(modelMapper.map(requestService.createRequest(itemRequest, requestorId), ItemRequestDTO.class));
 
     }
 
 
+    @GetMapping("/all")
+    public List<ItemRequestDTO> getAllRequestsFromOthers(@RequestHeader("X-Sharer-User-Id") int userId, @RequestParam(defaultValue = "0") int from, @RequestParam(defaultValue = "10") int size) {
 
-    @PatchMapping("/{id}/response")
-    public ResponseEntity<ItemRequestDTO> updateRequest(@PathVariable int id,
-                                                        @RequestBody ItemRequestDTO itemRequestDTO,
-                                                        @RequestHeader("X-Sharer-User-Id") int ownerId) {
-        ItemRequest updatedRequest = requestService.getRequestById(id);
-
-        return ResponseEntity.ok(modelMapper.map(updatedRequest, ItemRequestDTO.class));
+        return requestService.getRequestsFromOthers(userId, from, size)
+                .stream().map(request -> modelMapper.map(request, ItemRequestDTO.class))
+                .collect(Collectors.toList());
     }
+
 }

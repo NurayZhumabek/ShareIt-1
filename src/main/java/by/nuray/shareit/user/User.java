@@ -8,7 +8,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,7 +19,6 @@ import java.util.List;
 @Setter
 public class User {
 
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -28,18 +26,17 @@ public class User {
 
     @NotEmpty
     @Size(min = 2, max = 50)
-    @Column(name = "username",nullable = false)
+    @Column(name = "username", nullable = false)
     private String username;
 
     @Email
     @Column(name = "email")
     private String email;
 
-
     @OneToMany(mappedBy = "owner")
     private List<Item> items;
 
-    @OneToMany(mappedBy ="booker" )
+    @OneToMany(mappedBy = "booker")
     private List<Booking> bookings;
 
     @OneToMany(mappedBy = "requester")

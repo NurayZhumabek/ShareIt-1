@@ -1,7 +1,6 @@
 package by.nuray.shareit.user;
 
 
-
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -41,7 +40,8 @@ public class UserController {
 
 
     @PostMapping
-    public ResponseEntity<?> createPerson(@Valid @RequestBody UserDTO userDTO, BindingResult bindingResult) {
+    public ResponseEntity<?> createPerson(@Valid @RequestBody UserDTO userDTO,
+                                          BindingResult bindingResult) {
 
         User user = modelMapper.map(userDTO, User.class);
         if (bindingResult.hasErrors()) {
@@ -52,13 +52,15 @@ public class UserController {
         }
 
         userService.createUser(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(modelMapper.map(user, UserDTO.class));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(modelMapper.map(user, UserDTO.class));
     }
 
 
     @PatchMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable int id,
-                                        @RequestBody @Valid UserDTO userDTO, BindingResult bindingResult) {
+                                        @RequestBody @Valid UserDTO userDTO,
+                                        BindingResult bindingResult) {
         User updatedUser = modelMapper.map(userDTO, User.class);
 
         if (bindingResult.hasErrors()) {
@@ -73,6 +75,7 @@ public class UserController {
         return ResponseEntity.ok(modelMapper.map(updatedUser, UserDTO.class));
 
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<User> deleteUser(@PathVariable int id) {

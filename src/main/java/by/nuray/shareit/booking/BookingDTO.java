@@ -1,12 +1,17 @@
 package by.nuray.shareit.booking;
 
+import jakarta.validation.constraints.*;
+
 import java.time.LocalDateTime;
 
 public class BookingDTO {
 
     private int id;
+    @NotNull(message = "Start date must not be null")
     private LocalDateTime start;
+    @NotNull(message = "End date must not be null")
     private LocalDateTime end;
+    @NotNull
     private int itemId;
     private int bookerId;
     private Status status;
@@ -17,7 +22,8 @@ public class BookingDTO {
     }
 
 
-    public BookingDTO(int id, LocalDateTime start, LocalDateTime end, int itemId, int bookerId, Status status, State state) {
+    public BookingDTO(int id, LocalDateTime start, LocalDateTime end,
+                      int itemId, int bookerId, Status status, State state) {
         this.id = id;
         this.start = start;
         this.end = end;

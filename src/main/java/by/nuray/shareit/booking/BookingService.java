@@ -13,7 +13,9 @@ public interface BookingService {
 
     Booking updateBookingStatus(int bookingId, boolean approved, int ownerId);
 
-    List<Booking> getBookingsByBooker(int bookerId, State state);
+    List<Booking> getBookingsByBooker(int bookerId, State state, int from, int size);
 
-    List<Booking> getBookingsByOwner(int ownerId, State state);
+    List<Booking> getBookingsByOwner(int ownerId, State state, int from, int size);
+
+    List<Booking> getPastBookingsByBookerForItem(int bookerId, int itemId); // for comment class to check addComment()
 }

@@ -9,11 +9,10 @@ import by.nuray.shareit.util.ItemValidationException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 @Service
-public  class ItemServiceImpl implements ItemService {
+public class ItemServiceImpl implements ItemService {
 
 
     private final ItemRepository itemRepository;
@@ -50,6 +49,8 @@ public  class ItemServiceImpl implements ItemService {
     public void updateItem(int id, Item item, int ownerId) {
 
         Item currentItem = getItemById(id);
+        User user = userService.getUserById(ownerId);
+
         if (currentItem.getOwner().getId() != ownerId) {
             throw new ItemValidationException("You are not allowed to update this item");
         }
@@ -69,46 +70,62 @@ public  class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public void deleteItem(int id) {
-        if (!itemRepository.existsById(id)) {
-            throw new ItemNotFoundException("Item not found");
-        }
-        itemRepository.deleteById(id);
+    public void deleteItem(int itemId, int userId) {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ItemNotFoundException("Item not found"));
 
+        if (item.getOwner().getId() != userId) {
+            throw new ItemValidationException("You are not allowed to delete this item");
+        }
+
+        itemRepository.deleteById(itemId);
     }
+
 
     @Override
     public Item getItemById(int id) {
         return itemRepository.findById(id)
-                .orElseThrow(()->new ItemNotFoundException("Item with id " + id + " not found"));
+                .orElseThrow(() -> new ItemNotFoundException("Item with id " + id + " not found"));
     }
 
     @Override
-    public List<Item> getAllItems() {
-        return itemRepository.findAll();
+    public List<Item> getAllItems(int userId, int from, int size) {
+        userService.getUserById(userId);
+        return itemRepository.findAllByOwnerIdPaged(userId, from, size);
+    }
+
+
+    @Override
+    public List<Item> searchItemsPaged(String itemName, int from, int size) {
+        if (itemName == null || itemName.isBlank()) {
+            throw new ItemValidationException("The search string is required");
+        }
+        return itemRepository.searchAvailableItemsPaged(itemName, from, size);
+
     }
 
     @Override
-    public List<Item> getAllItemsByOwner(int ownerId) {
-        return itemRepository.findByOwnerId(ownerId);
-    }
-
-    @Override
-    public List<Item> searchItems(String itemName) {
+    public List<Item> search(String itemName) {
+        if (itemName == null || itemName.isBlank()) {
+            throw new ItemValidationException("The search string is required");
+        }
         return itemRepository.searchAvailableItems(itemName);
-
     }
 
     @Override
     public Item createItemFromRequest(Item item, int ownerId, int requestId) {
 
-        ItemRequest request = requestService.getRequestById(requestId);
+        ItemRequest request = requestService.findRequestById(requestId);
         Item newItem = createItem(item, ownerId);
         newItem.setRequest(request);
 
         return itemRepository.save(newItem);
 
+    }
 
+    @Override
+    public List<Item> getItemsByRequestId(int requestId) {
+        return itemRepository.findByRequestId(requestId);
     }
 }
 

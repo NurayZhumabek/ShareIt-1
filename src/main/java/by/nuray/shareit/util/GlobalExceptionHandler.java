@@ -63,6 +63,32 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserValidationException.class)
     public ResponseEntity<ErrorResponse> handleUserValidationException(UserValidationException ex) {
         ErrorResponse response = new ErrorResponse(ex.getMessage(), System.currentTimeMillis());
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);    }
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 
+    @ExceptionHandler(ItemValidationException.class)
+    public ResponseEntity<String> handleItemValidationException(ItemValidationException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(BookingNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleBookingNotFoundException(BookingNotFoundException ex) {
+        ErrorResponse response = new ErrorResponse(
+                ex.getMessage(),
+                System.currentTimeMillis()
+        );
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+
+    @ExceptionHandler(RequestNotFound.class)
+    public ResponseEntity<ErrorResponse> handleRequestNotFoundException(RequestNotFound ex) {
+        ErrorResponse response = new ErrorResponse(
+                ex.getMessage(),
+                System.currentTimeMillis()
+        );
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
 }

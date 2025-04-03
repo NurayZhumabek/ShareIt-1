@@ -8,6 +8,5 @@ public interface CommentService {
 
     List<Comment> getCommentsByUser(int userId);
 
-
     Comment addComment(Comment comment, int itemId, int authorId);
 }

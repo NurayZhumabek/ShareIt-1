@@ -6,7 +6,6 @@ import by.nuray.shareit.item.ItemService;
 import by.nuray.shareit.user.User;
 import by.nuray.shareit.user.UserService;
 import by.nuray.shareit.util.CommentException;
-import by.nuray.shareit.booking.State;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,7 +21,8 @@ public class CommentServiceImpl implements CommentService {
     private final BookingService bookingService;
 
 
-    public CommentServiceImpl(CommentRepository commentRepository, UserService userService, ItemService itemService, BookingService bookingService) {
+    public CommentServiceImpl(CommentRepository commentRepository, UserService userService,
+                              ItemService itemService, BookingService bookingService) {
         this.commentRepository = commentRepository;
         this.userService = userService;
         this.itemService = itemService;
@@ -31,11 +31,13 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public List<Comment> getCommentsByItem(int itemId) {
-        return commentRepository.findByItemId( itemId);
+
+        return commentRepository.findByItemId(itemId);
     }
 
     @Override
     public List<Comment> getCommentsByUser(int userId) {
+
         return commentRepository.findByAuthorId(userId);
     }
 
@@ -47,15 +49,14 @@ public class CommentServiceImpl implements CommentService {
         if (comment == null) {
             throw new CommentException("Comment cannot be null");
         }
-        if (comment.getText()==null || comment.getText().isBlank()) {
+        if (comment.getText() == null || comment.getText().isBlank()) {
             throw new CommentException("Comment text cannot be empty");
         }
 
-        boolean hasRented = bookingService.getBookingsByBooker(authorId, State.PAST)
-                .stream()
-                .anyMatch(booking -> booking.getItem().getId() == itemId);
+        boolean hasRented = bookingService.getPastBookingsByBookerForItem(authorId, itemId).size() > 0;
 
-        if (!hasRented){
+
+        if (!hasRented) {
             throw new CommentException("You cannot comment this item as you have not rented");
         }
         comment.setAuthor(author);

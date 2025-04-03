@@ -41,7 +41,8 @@ public class BookingController {
         Booking booking = modelMapper.map(bookingDTO, Booking.class);
         bookingService.createBooking(booking, bookerId, bookingDTO.getItemId());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(modelMapper.map(booking, BookingDTO.class));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(modelMapper.map(booking, BookingDTO.class));
     }
 
     @PatchMapping("/cancel/{id}")
@@ -66,20 +67,24 @@ public class BookingController {
     @GetMapping("/owner")
     public List<BookingDTO> getBookingByOwner(
             @RequestHeader("X-Sharer-User-Id") int ownerId,
-            @RequestParam(value = "state", defaultValue = "ALL") State state) {
+            @RequestParam(value = "state", defaultValue = "ALL") State state,
+            @RequestParam(defaultValue = "0") int from,
+            @RequestParam(defaultValue = "10") int size) {
 
-        return bookingService.getBookingsByOwner(ownerId, state)
+        return bookingService.getBookingsByOwner(ownerId, state, from, size)
                 .stream()
                 .map(b -> modelMapper.map(b, BookingDTO.class))
                 .collect(Collectors.toList());
     }
 
-    @GetMapping("/booker")
+    @GetMapping()
     public List<BookingDTO> getBookingByBooker(
             @RequestHeader("X-Sharer-User-Id") int bookerId,
-            @RequestParam(value = "state", defaultValue = "ALL") State state) {
+            @RequestParam(defaultValue = "ALL") State state,
+            @RequestParam(defaultValue = "0") int from,
+            @RequestParam(defaultValue = "10") int size) {
 
-        return bookingService.getBookingsByBooker(bookerId, state)
+        return bookingService.getBookingsByBooker(bookerId, state, from, size)
                 .stream()
                 .map(b -> modelMapper.map(b, BookingDTO.class))
                 .collect(Collectors.toList());

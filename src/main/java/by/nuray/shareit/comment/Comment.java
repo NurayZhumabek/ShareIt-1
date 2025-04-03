@@ -4,7 +4,6 @@ package by.nuray.shareit.comment;
 import by.nuray.shareit.item.Item;
 import by.nuray.shareit.user.User;
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 

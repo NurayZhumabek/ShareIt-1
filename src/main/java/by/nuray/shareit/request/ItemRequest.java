@@ -4,12 +4,12 @@ import by.nuray.shareit.item.Item;
 import by.nuray.shareit.user.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -19,6 +19,7 @@ import java.util.List;
 @Setter
 public class ItemRequest {
 
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -26,8 +27,13 @@ public class ItemRequest {
 
     @NotEmpty
     @Size(min = 2, max = 200)
-    @Column(name = "description",nullable = false)
+    @Column(name = "description", nullable = false)
     private String description;
+
+
+    @Column(name = "created_at")
+    @NotNull
+    private LocalDateTime createdAt;
 
 
     @ManyToOne
@@ -37,12 +43,6 @@ public class ItemRequest {
 
     @OneToMany(mappedBy = "request")
     private List<Item> items;
-
-
-
-
-
-
 
 
 }
